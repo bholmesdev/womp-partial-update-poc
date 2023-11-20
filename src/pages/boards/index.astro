@@ -1,0 +1,52 @@
+---
+import { Card, CardContent, CardHeader } from "@/components/card";
+import MainLayout from "@/layouts/MainLayout.astro";
+import type { Board } from "@/lib/db";
+
+const boards: (typeof Board.$inferSelect)[] = [
+  {
+    id: "1",
+    name: "Loading",
+    userId: "bholmesdev",
+    createdAt: new Date(),
+  },
+  {
+    id: "1",
+    name: "Loading",
+    userId: "bholmesdev",
+    createdAt: new Date(),
+  },
+  {
+    id: "1",
+    name: "Loading",
+    userId: "bholmesdev",
+    createdAt: new Date(),
+  },
+  {
+    id: "1",
+    name: "Loading",
+    userId: "bholmesdev",
+    createdAt: new Date(),
+  },
+];
+---
+
+<MainLayout title="Boards | WOMP">
+  <main class="grid grid-cols-auto-cards gap-6">
+    {
+      boards.map((b) => (
+        <Card>
+          <CardHeader>
+            <h2>
+              <a href={`/boards/${b.id}/edit`}>{b.name}</a>
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <p>0 sounds</p>
+          </CardContent>
+        </Card>
+      ))
+    }
+  </main>
+</MainLayout>
+ @/lib/db

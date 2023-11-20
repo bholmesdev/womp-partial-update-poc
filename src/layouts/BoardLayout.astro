@@ -1,0 +1,77 @@
+---
+import { buttonVariants } from "@/components/buttonVariants";
+import MainLayout from "@/layouts/MainLayout.astro";
+import type { Board } from "@/lib/db";
+import {
+  Pencil2Icon,
+  PlayIcon,
+  ReloadIcon,
+} from "@radix-ui/react-icons";
+
+type Props = { board: typeof Board.$inferSelect };
+
+const { board } = Astro.props;
+
+const playPath = new URL(`/boards/${board.id}`, Astro.url.origin).pathname;
+const editPath = new URL(`/boards/${board.id}/edit`, Astro.url.origin).pathname;
+const currentPath = Astro.url.pathname;
+
+const session = await Astro.locals.auth.validate();
+const isOwner = session?.user?.userId === board.userId;
+const isPlay = currentPath === playPath;
+---
+
+<MainLayout>
+  <main class="px-3 m-auto max-w-screen-lg">
+    <div class="flex justify-between items-center mb-4 gap-2">
+      <slot name="board-name" />
+      <nav class="flex justify-end gap-3">
+        {
+          isOwner ? (
+            <a
+              class={buttonVariants({
+                variant: isPlay ? "default" : "secondary",
+              })}
+              data-edit-play
+              transition:name="edit-play-link"
+              href={isPlay ? editPath : playPath}
+            >
+              {isPlay ? (
+                <>
+                  Edit{" "}
+                  <Pencil2Icon data-icon className="ml-1 pointer-events-none" />
+                </>
+              ) : (
+                <>
+                  Play{" "}
+                  <PlayIcon data-icon className="ml-1 pointer-events-none" />
+                </>
+              )}
+              <ReloadIcon data-icon className="ml-1 hidden animate-spin" />
+            </a>
+          ) : null
+        }
+      </nav>
+    </div>
+    <div transition:animate="slide" class="grid grid-cols-auto-cards gap-6">
+      <slot />
+    </div>
+  </main>
+
+{isOwner ? (
+  <script is:inline>
+  document.querySelector("a[data-edit-play]")?.addEventListener(
+    "click",
+    (e) => {
+      if (!e.target) return;
+      for (const icon of e.target.querySelectorAll("[data-icon]")) {
+        icon.classList.toggle("hidden");
+      }
+    },
+    { once: true }
+  );
+  </script>
+) : null}
+</MainLayout>
+
+@/lib/db
