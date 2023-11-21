@@ -1,5 +1,5 @@
 ---
-import Logo from "@/components/Logo.astro";
+import Logo from "@/components/Logo.html";
 import "@/global.css";
 import { ViewTransitions } from "astro:transitions";
 
@@ -14,9 +14,9 @@ import { ViewTransitions } from "astro:transitions";
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>WOMP</title>
-    <ViewTransitions />
+    <ViewTransitions handleForms />
   </head>
-  <body class="dark" transition:animate="none">
+  <body class="dark">
     <nav class="bg-card py-2 px-3 mb-4">
       <div class="flex justify-between items-center max-w-screen-xl mx-auto">
         <a href="/boards/"><Logo /></a>
