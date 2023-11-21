@@ -35,7 +35,7 @@ async function handlePost() {
 }
 ---
 
-<div x-data="partial" data-partial={`form-${id}`}>
+<partial-boundary data-partial={`form-${id}`}>
   <Card>
     {
       success && (
@@ -44,12 +44,7 @@ async function handlePost() {
         </div>
       )
     }
-    <form
-      transition:name={`form-${id}`}
-      method="POST"
-      @submit.prevent="submit"
-      data-astro-reload
-    >
+    <form transition:name={`form-${id}`} method="POST" data-astro-reload>
       <EncodeProps {...Astro.props} />
       <CardHeader>
         <input type="hidden" name="type" value={id} />
@@ -71,46 +66,54 @@ async function handlePost() {
       </CardHeader>
     </form>
   </Card>
-</div>
+</partial-boundary>
 
 <script>
-  import Alpine from "alpinejs";
-  import { navigate, supportsViewTransitions } from "astro:transitions/client";
+  import {
+    navigate,
+    supportsViewTransitions,
+    transitionEnabledOnThisPage,
+  } from "astro:transitions/client";
 
-  Alpine.data("partial", () => {
-    return {
-      submit() {
-        const formData = new FormData(this.$el as HTMLFormElement);
-        const partialBoundary = this.$el.closest("[data-partial]");
-        if (!partialBoundary) {
-          return navigate(window.location.pathname, { formData });
+  class PartialBoundary extends HTMLElement {
+    constructor() {
+      super();
+    }
+    connectedCallback() {
+      const forms = this.querySelectorAll("form");
+      forms.forEach((form) => {
+        form.addEventListener("submit", (e) => this.submitCallback(e));
+      });
+    }
+
+    private submitCallback(event: SubmitEvent) {
+      event.preventDefault();
+      const formData = new FormData(event.target as HTMLFormElement);
+      const partialId = this.getAttribute("data-partial")!;
+      fetch("/boards/SoundForm", {
+        method: "POST",
+        body: formData,
+      }).then(async (response) => {
+        if (!response.ok) {
+          navigate(window.location.pathname, { formData });
         }
-        const partialId = partialBoundary.getAttribute("data-partial")!;
+        const htmlString = await response.text();
+        const html = new DOMParser().parseFromString(htmlString, "text/html");
+        const incoming = html.querySelector(`[data-partial=${partialId}]`);
 
-        fetch("/boards/SoundForm", {
-          method: "POST",
-          body: formData,
-        }).then(async (response) => {
-          if (!response.ok) {
-            navigate(window.location.pathname, { formData });
-          }
-          const htmlString = await response.text();
-          const html = new DOMParser().parseFromString(htmlString, "text/html");
-          const incoming = html.querySelector(`[data-partial=${partialId}]`);
-
-          if (incoming) {
-            if (supportsViewTransitions) {
-              document.startViewTransition(() =>
-                partialBoundary.replaceWith(incoming)
-              );
-            } else {
-              partialBoundary.replaceWith(incoming);
-            }
+        if (incoming) {
+          if (transitionEnabledOnThisPage() && supportsViewTransitions) {
+            // @ts-expect-error
+            document.startViewTransition(() => this.replaceWith(incoming));
           } else {
-            navigate(window.location.pathname, { formData });
+            this.replaceWith(incoming);
           }
-        });
-      },
-    };
-  });
+        } else {
+          navigate(window.location.pathname, { formData });
+        }
+      });
+    }
+  }
+
+  customElements.define("partial-boundary", PartialBoundary);
 </script>
