@@ -35,7 +35,7 @@ async function handlePost() {
 }
 ---
 
-<partial-boundary data-partial={`form-${id}`}>
+<partial-boundary>
   <Card>
     {
       success && (
@@ -89,27 +89,25 @@ async function handlePost() {
     private submitCallback(event: SubmitEvent) {
       event.preventDefault();
       const formData = new FormData(event.target as HTMLFormElement);
-      const partialId = this.getAttribute("data-partial")!;
       fetch("/boards/SoundForm", {
         method: "POST",
         body: formData,
       }).then(async (response) => {
         if (!response.ok) {
-          navigate(window.location.pathname, { formData });
+          return navigate(window.location.pathname, { formData });
         }
         const htmlString = await response.text();
         const html = new DOMParser().parseFromString(htmlString, "text/html");
-        const incoming = html.querySelector(`[data-partial=${partialId}]`);
+        const incoming = html.querySelector("partial-boundary");
+        if (!incoming) {
+          return navigate(window.location.pathname, { formData });
+        }
 
-        if (incoming) {
-          if (transitionEnabledOnThisPage() && supportsViewTransitions) {
-            // @ts-expect-error
-            document.startViewTransition(() => this.replaceWith(incoming));
-          } else {
-            this.replaceWith(incoming);
-          }
+        if (transitionEnabledOnThisPage() && supportsViewTransitions) {
+          // @ts-expect-error
+          document.startViewTransition(() => this.replaceWith(incoming));
         } else {
-          navigate(window.location.pathname, { formData });
+          this.replaceWith(incoming);
         }
       });
     }
