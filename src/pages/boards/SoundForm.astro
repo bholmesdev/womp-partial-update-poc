@@ -1,0 +1,126 @@
+---
+export const partial = true;
+
+import { z } from "astro/zod";
+import { Card, CardHeader, CardContent } from "../../components/card";
+
+type Props = {
+  id?: string;
+  name?: string;
+};
+
+let fieldErrors: { id?: string[]; name?: string[] } = {};
+let { id, name } = Astro.props;
+
+if (
+  Astro.request.method === "POST" &&
+  Astro.request.headers.get("Content-Type")?.startsWith("multipart/form-data")
+) {
+  const request = Astro.request.clone();
+  const formData = await request.formData();
+
+  const obj = Object.fromEntries(formData.entries());
+  const parsed = z
+    .object({
+      id: z.string(),
+      name: z.string().min(2),
+    })
+    .safeParse(obj);
+
+  if (!parsed.success) {
+    fieldErrors = parsed.error.formErrors.fieldErrors;
+    //TODO: figure out boundary between required props and validated
+    if (typeof obj.id === "string" && typeof obj.name === "string") {
+      ({ id, name } = obj);
+    }
+  } else {
+    console.log(parsed.data);
+    ({ id, name } = parsed.data);
+  }
+}
+
+if (!id || !name) {
+  throw new Error("Screwed the pooch!");
+}
+---
+
+<Card>
+  <form
+    data-astro-reload
+    data-partial={`form-${id}`}
+    method="POST"
+    enctype="multipart/form-data"
+    x-data="form"
+    @submit.prevent="submit"
+  >
+    <CardHeader>
+      <input type="hidden" name="id" value={id} />
+      <!-- TODO: handle transition:persist during partial transition -->
+      <input type="hidden" name={`form-${id}`} />
+
+      {
+        fieldErrors.name && (
+          <ul>
+            {fieldErrors.name.map((error) => (
+              <li class="bg-red-200 text-red-950 px-2 py-1 text-sm rounded">
+                {error}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <input
+        transition:name={`form-name-${id}`}
+        type="text"
+        name="name"
+        class="bg-background"
+        value={name}
+      />
+      <CardContent>
+        <p>0 sounds</p>
+      </CardContent>
+    </CardHeader>
+  </form>
+</Card>
+
+<script>
+  import Alpine from "alpinejs";
+  import { navigate, supportsViewTransitions } from "astro:transitions/client";
+
+  Alpine.data("form", () => {
+    return {
+      submit() {
+        const form = this.$el as HTMLFormElement;
+        const formData = new FormData(form);
+        const url = "/boards/SoundForm";
+        const partialId = form.getAttribute("data-partial");
+
+        if (!partialId) {
+          navigate(window.location.pathname, { formData });
+        }
+
+        fetch(url, {
+          method: form.getAttribute("method") || "POST",
+          body: formData,
+        }).then(async (response) => {
+          if (!response.ok) {
+            navigate(window.location.pathname, { formData });
+          }
+          const htmlString = await response.text();
+          const html = new DOMParser().parseFromString(htmlString, "text/html");
+          const partial = html.querySelector(`[data-partial=${partialId}]`);
+
+          if (partial) {
+            if (supportsViewTransitions) {
+              document.startViewTransition(() => form.replaceWith(partial));
+            } else {
+              form.replaceWith(partial);
+            }
+          } else {
+            navigate(window.location.pathname, { formData });
+          }
+        });
+      },
+    };
+  });
+</script>

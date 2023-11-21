@@ -1,5 +1,5 @@
 ---
-import { Card, CardContent, CardHeader } from "@/components/card";
+import SoundForm from "@/pages/boards/SoundForm.astro";
 import MainLayout from "@/layouts/MainLayout.astro";
 import type { Board } from "@/lib/db";
 
@@ -11,19 +11,19 @@ const boards: (typeof Board.$inferSelect)[] = [
     createdAt: new Date(),
   },
   {
-    id: "1",
+    id: "2",
     name: "Loading",
     userId: "bholmesdev",
     createdAt: new Date(),
   },
   {
-    id: "1",
+    id: "3",
     name: "Loading",
     userId: "bholmesdev",
     createdAt: new Date(),
   },
   {
-    id: "1",
+    id: "4",
     name: "Loading",
     userId: "bholmesdev",
     createdAt: new Date(),
@@ -33,20 +33,6 @@ const boards: (typeof Board.$inferSelect)[] = [
 
 <MainLayout title="Boards | WOMP">
   <main class="grid grid-cols-auto-cards gap-6">
-    {
-      boards.map((b) => (
-        <Card>
-          <CardHeader>
-            <h2>
-              <a href={`/boards/${b.id}/edit`}>{b.name}</a>
-            </h2>
-          </CardHeader>
-          <CardContent>
-            <p>0 sounds</p>
-          </CardContent>
-        </Card>
-      ))
-    }
+    {boards.map((b) => <SoundForm {...b} />)}
   </main>
 </MainLayout>
- @/lib/db
