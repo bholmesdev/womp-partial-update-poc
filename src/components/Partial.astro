@@ -1,4 +1,7 @@
 ---
+// TODO: use Astro's own props parser once we can expose it
+import { stringify as devalueStringify } from "devalue";
+
 type Props<T extends Record<string, any>> = {
   component(_props: T): any;
   props?: T;
@@ -39,7 +42,7 @@ const pagePath = componentFileUrl.href
   .replace(/\.astro$/, "");
 ---
 
-<simple-partial data-url={pagePath} data-props={JSON.stringify(props)}>
+<simple-partial data-url={pagePath} data-props={devalueStringify(props)}>
   <Component {...props} />
 </simple-partial>
 
@@ -50,6 +53,7 @@ const pagePath = componentFileUrl.href
     transitionEnabledOnThisPage,
   } from "astro:transitions/client";
   import { encodeTypeInValue } from "@/utils";
+  import { parse as devalueParse } from "devalue";
 
   const missingUrlError = new Error(
     "[simple:partial] Missing partial URL. Did you use the Partial component?"
@@ -69,7 +73,7 @@ const pagePath = componentFileUrl.href
       }
       const stringifiedProps = this.getAttribute("data-props");
       if (stringifiedProps) {
-        this.props = JSON.parse(stringifiedProps);
+        this.props = devalueParse(stringifiedProps);
       }
       this.initForms();
     }
