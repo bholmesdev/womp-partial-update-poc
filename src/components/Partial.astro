@@ -52,8 +52,6 @@ const pagePath = componentFileUrl.href
     supportsViewTransitions,
     transitionEnabledOnThisPage,
   } from "astro:transitions/client";
-  import { encodeTypeInValue } from "@/utils";
-  import { parse as devalueParse } from "devalue";
 
   const missingUrlError = new Error(
     "[simple:partial] Missing partial URL. Did you use the Partial component?"
@@ -64,17 +62,14 @@ const pagePath = componentFileUrl.href
       super();
     }
     private url: string | undefined;
-    private props: Record<string, any> | undefined;
+    private stringifiedProps: string | undefined;
 
     connectedCallback() {
       this.url = this.getAttribute("data-url") ?? undefined;
       if (!this.url) {
         throw missingUrlError;
       }
-      const stringifiedProps = this.getAttribute("data-props");
-      if (stringifiedProps) {
-        this.props = devalueParse(stringifiedProps);
-      }
+      this.stringifiedProps = this.getAttribute("data-props") ?? undefined;
       this.initForms();
     }
 
@@ -93,10 +88,8 @@ const pagePath = componentFileUrl.href
         throw missingUrlError;
       }
       const formData = new FormData(event.target as HTMLFormElement);
-      if (this.props) {
-        for (const [key, value] of Object.entries(this.props)) {
-          formData.set(`__partial${key}`, encodeTypeInValue(value));
-        }
+      if (this.stringifiedProps) {
+        formData.set("__partialProps", this.stringifiedProps);
       }
       fetch(this.url, {
         method: "POST",
