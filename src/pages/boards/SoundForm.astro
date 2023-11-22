@@ -3,7 +3,7 @@ export const partial = true;
 
 import { z } from "astro/zod";
 import { Card, CardHeader, CardContent } from "../../components/card";
-import { EncodeProps, resolveProps } from "@/utils.tsx";
+import { resolveProps } from "@/utils";
 
 type Props = {
   id: string;
@@ -35,35 +35,32 @@ async function handlePost() {
 }
 ---
 
-<partial-boundary>
-  <Card>
-    {
-      success && (
-        <div class="bg-green-200 text-green-950 px-2 py-1 text-sm rounded">
-          Success!
-        </div>
-      )
-    }
-    <form transition:name={`form-${id}`} method="POST">
-      <EncodeProps {...Astro.props} />
-      <CardHeader>
-        <input type="hidden" name="type" value={id} />
-        <input type="text" name="name" class="bg-background" value={name} />
-        {
-          fieldErrors.name && (
-            <ul>
-              {fieldErrors.name.map((error) => (
-                <li class="bg-red-200 text-red-950 px-2 py-1 text-sm rounded">
-                  {error}
-                </li>
-              ))}
-            </ul>
-          )
-        }
-        <CardContent>
-          <p>0 sounds</p>
-        </CardContent>
-      </CardHeader>
-    </form>
-  </Card>
-</partial-boundary>
+<Card>
+  {
+    success && (
+      <div class="bg-green-200 text-green-950 px-2 py-1 text-sm rounded">
+        Success!
+      </div>
+    )
+  }
+  <form transition:name={`form-${id}`} method="POST">
+    <CardHeader>
+      <input type="hidden" name="type" value={id} />
+      <input type="text" name="name" class="bg-background" value={name} />
+      {
+        fieldErrors.name && (
+          <ul>
+            {fieldErrors.name.map((error) => (
+              <li class="bg-red-200 text-red-950 px-2 py-1 text-sm rounded">
+                {error}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <CardContent>
+        <p>0 sounds</p>
+      </CardContent>
+    </CardHeader>
+  </form>
+</Card>

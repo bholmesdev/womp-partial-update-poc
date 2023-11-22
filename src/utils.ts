@@ -72,18 +72,6 @@ export async function resolveProps<TProps extends Record<string, any>>({
   return props;
 }
 
-// TODO: encrypt / decrypt with crypto
-// Just encoding value with base type for now
-export function EncodeProps<TProps extends Record<string, any>>(props: TProps) {
-  return Object.entries(props).map(([key, value]) => (
-    <input
-      type="hidden"
-      name={`__partial${key}`}
-      value={encodeTypeInValue(value)}
-    />
-  ));
-}
-
 type EncodedType =
   | `string:${string}`
   | `number:${number}`
@@ -104,7 +92,9 @@ const encodedTypeSchema = z
     return [type, value];
   });
 
-function encodeTypeInValue(value: any): EncodedType {
+// TODO: encrypt / decrypt with crypto
+// Just encoding value with base type for now
+export function encodeTypeInValue(value: any): EncodedType {
   if (typeof value === "string") {
     return `string:${value}`;
   } else if (typeof value === "number") {

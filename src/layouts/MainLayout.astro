@@ -23,58 +23,5 @@ import { ViewTransitions } from "astro:transitions";
       </div>
     </nav>
     <slot />
-
-    <script>
-      import {
-        navigate,
-        supportsViewTransitions,
-        transitionEnabledOnThisPage,
-      } from "astro:transitions/client";
-
-      class PartialBoundary extends HTMLElement {
-        constructor() {
-          super();
-        }
-        connectedCallback() {
-          const forms = this.querySelectorAll("form");
-          forms.forEach((form) => {
-            // disable Astro's default submit handler
-            form.setAttribute("data-astro-reload", "true");
-            form.addEventListener("submit", (e) => this.submitCallback(e));
-          });
-        }
-
-        private submitCallback(event: SubmitEvent) {
-          event.preventDefault();
-          const formData = new FormData(event.target as HTMLFormElement);
-          fetch("/boards/SoundForm", {
-            method: "POST",
-            body: formData,
-          }).then(async (response) => {
-            if (!response.ok) {
-              return navigate(window.location.pathname, { formData });
-            }
-            const htmlString = await response.text();
-            const html = new DOMParser().parseFromString(
-              htmlString,
-              "text/html"
-            );
-            const incoming = html.querySelector("partial-boundary");
-            if (!incoming) {
-              return navigate(window.location.pathname, { formData });
-            }
-
-            if (transitionEnabledOnThisPage() && supportsViewTransitions) {
-              // @ts-expect-error
-              document.startViewTransition(() => this.replaceWith(incoming));
-            } else {
-              this.replaceWith(incoming);
-            }
-          });
-        }
-      }
-
-      customElements.define("partial-boundary", PartialBoundary);
-    </script>
   </body>
 </html>

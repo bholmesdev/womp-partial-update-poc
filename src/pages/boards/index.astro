@@ -2,6 +2,7 @@
 import SoundForm from "@/pages/boards/SoundForm.astro";
 import MainLayout from "@/layouts/MainLayout.astro";
 import type { Board } from "@/lib/db";
+import Partial from "@/components/Partial.astro";
 
 const boards: (typeof Board.$inferSelect)[] = [
   {
@@ -33,6 +34,10 @@ const boards: (typeof Board.$inferSelect)[] = [
 
 <MainLayout title="Boards | WOMP">
   <main class="grid grid-cols-auto-cards gap-6">
-    {boards.map((b) => <SoundForm {...b} />)}
+    {
+      boards.map(({ name, id }) => (
+        <Partial component={SoundForm} props={{ name, id }} />
+      ))
+    }
   </main>
 </MainLayout>
