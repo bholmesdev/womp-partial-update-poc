@@ -10,20 +10,17 @@ type Props = {
   name: string;
 };
 
-await new Promise((resolve) => setTimeout(resolve, 300));
-
 const { id, name: initialName } = await resolveProps(Astro);
+const formData = await Astro.locals.getFormData(id);
 
 let fieldErrors: { id?: string[]; name?: string[] } = {};
 let name = initialName;
 let success = false;
 
-if (Astro.request.method === "POST") await handlePost();
+await handlePost();
 
 async function handlePost() {
-  const request = Astro.request.clone();
-  const formData = await request.formData();
-  if (formData.get("type") !== id) return;
+  if (!formData) return;
 
   const obj = Object.fromEntries(formData.entries());
   const parsed = z.object({ name: z.string().min(2) }).safeParse(obj);
@@ -31,6 +28,8 @@ async function handlePost() {
   if (!parsed.success) {
     fieldErrors = parsed.error.formErrors.fieldErrors;
   } else {
+    // fake db delay
+    await new Promise((resolve) => setTimeout(resolve, 300));
     name = parsed.data.name;
     success = true;
   }
