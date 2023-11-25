@@ -9,30 +9,33 @@ type Props = {
   name: string;
 };
 
-const { action, getSearchParams } = Astro.locals.partial;
+const { action, getSearchParams, redirect } = Astro.locals.partial;
 const { id, name: initialName } = await getSearchParams<Props>();
 
 const formData = await Astro.locals.getFormData(id);
 
 let fieldErrors: { id?: string[]; name?: string[] } = {};
 let name = initialName;
-let success = false;
 
-await handlePost();
+const { success } = await handlePost();
+if (success) {
+  return redirect(`/sounds/${id}`);
+}
 
 async function handlePost() {
-  if (!formData) return;
+  if (!formData) return { success: false };
 
   const obj = Object.fromEntries(formData.entries());
   const parsed = z.object({ name: z.string().min(2) }).safeParse(obj);
 
   if (!parsed.success) {
     fieldErrors = parsed.error.formErrors.fieldErrors;
+    return { success: false };
   } else {
     // fake db delay
     await new Promise((resolve) => setTimeout(resolve, 300));
     name = parsed.data.name;
-    success = true;
+    return { success: true };
   }
 }
 ---
@@ -46,13 +49,6 @@ async function handlePost() {
     @submit="loading = true"
   >
     <CardHeader>
-      {
-        success && (
-          <div class="bg-green-200 text-green-950 px-2 py-1 text-sm rounded">
-            Success!
-          </div>
-        )
-      }
       <p
         x-cloak
         x-show="loading"

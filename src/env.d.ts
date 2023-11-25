@@ -8,6 +8,10 @@ declare namespace App {
         T extends Record<string, string | boolean | number | undefined>
       >(): Promise<T>;
       action: string;
+      redirect: (
+        path: string,
+        status?: ValidRedirectStatus | undefined
+      ) => Response;
     };
   }
 }

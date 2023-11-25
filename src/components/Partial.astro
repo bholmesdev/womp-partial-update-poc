@@ -67,12 +67,8 @@ const actionParams = new URLSearchParams({
   _partial: partialUrl,
 });
 
-Astro.locals.partial = {
-  action: `?${actionParams.toString()}`,
-  getSearchParams() {
-    return searchParams;
-  },
-};
+Astro.locals.partial.action = `?${actionParams.toString()}`;
+Astro.locals.partial.getSearchParams = () => searchParams;
 ---
 
 <simple-partial>
@@ -80,6 +76,7 @@ Astro.locals.partial = {
 </simple-partial>
 
 <script>
+  import type { PartialRedirectPayload } from "@/middleware";
   import {
     navigate,
     supportsViewTransitions,
@@ -125,6 +122,16 @@ Astro.locals.partial = {
         if (!response.ok) {
           return navigate(form.action, { formData });
         }
+        console.log([...response.headers.entries()]);
+        if (response.headers.has("X-Partial-Redirect")) {
+          const payload = (await response.json()) as PartialRedirectPayload;
+          return navigate(payload.location);
+        }
+
+        if (response.headers.get("Content-Type") !== "text/html") {
+          return navigate(form.action, { formData });
+        }
+
         const htmlString = await response.text();
         const incomingContents = new DOMParser().parseFromString(
           htmlString,
