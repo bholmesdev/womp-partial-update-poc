@@ -8,18 +8,53 @@ const formContentTypes = [
 function isFormRequest(request: Request) {
   return (
     request.method === "POST" &&
-    formContentTypes.includes(request.headers.get("content-type") ?? "")
+    formContentTypes.some((t) =>
+      request.headers.get("content-type")?.startsWith(t)
+    )
   );
 }
 
+export type SearchParams = Record<
+  string,
+  string | number | boolean | undefined
+>;
+
 export const onRequest = defineMiddleware(({ request, locals }, next) => {
   locals.getFormData = async (type?: string) => {
-    if (!isFormRequest(request)) return undefined;
+    if (!isFormRequest(request)) return;
     const formData = request.clone().formData();
     if (!type) return formData;
 
     const data = await formData;
     if (data.get("type") === type) return data;
   };
+
+  locals.partial = {
+    action: `?_partial=${new URL(request.url).pathname}`,
+    async getSearchParams<T extends SearchParams>() {
+      const searchParams = new URLSearchParams(request.url.split("?")[1]);
+      const data: SearchParams = {};
+
+      for (const key of searchParams.keys()) {
+        const [value, type] = searchParams.getAll(key);
+        switch (type) {
+          case "number":
+            data[key] = Number(value);
+            break;
+          case "boolean":
+            data[key] = value === "true";
+            break;
+          case "string":
+          default:
+            data[key] = value;
+            break;
+        }
+      }
+
+      // Type cast is the best we can do without runtime validation
+      return data as T;
+    },
+  };
+
   next();
 });

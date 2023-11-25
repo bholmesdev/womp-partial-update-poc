@@ -1,13 +1,12 @@
 ---
-// TODO: use Astro's own props parser once we can expose it
-import { stringify as devalueStringify } from "devalue";
+import type { SearchParams } from "@/middleware";
 
-type Props<T extends Record<string, any>> = {
-  component(_props: T): any;
-  props?: T;
+type Props<T extends SearchParams> = {
+  component(props: T): any;
+  searchParams?: T;
 };
 
-const { component: Component, props } = Astro.props;
+const { component: Component, searchParams } = Astro.props;
 
 function safeParseUrl(url: string) {
   try {
@@ -37,13 +36,47 @@ if (!componentFileUrl.href.startsWith(pagesDirUrl.href)) {
   );
 }
 
-const pagePath = componentFileUrl.href
+let partialUrl = componentFileUrl.href
   .slice(pagesDirUrl.href.length)
   .replace(/\.astro$/, "");
+
+const partialSearchParams = new URLSearchParams();
+for (const [key, value] of Object.entries(searchParams ?? {})) {
+  if (typeof value === "string") {
+    partialSearchParams.append(key, value);
+    partialSearchParams.append(key, "string");
+  } else if (typeof value === "boolean") {
+    partialSearchParams.append(key, value ? "true" : "false");
+    partialSearchParams.append(key, "boolean");
+  } else if (typeof value === "number") {
+    // TODO: number parsing
+    partialSearchParams.append(key, String(value));
+    partialSearchParams.append(key, "number");
+  } else if (value instanceof Date) {
+    partialSearchParams.append(key, value.toISOString());
+    partialSearchParams.append(key, "date");
+  } else {
+    partialSearchParams.append(key, "undefined");
+    partialSearchParams.append(key, "undefined");
+  }
+}
+
+partialUrl += `?${partialSearchParams.toString()}`;
+
+const actionParams = new URLSearchParams({
+  _partial: partialUrl,
+});
+
+Astro.locals.partial = {
+  action: `?${actionParams.toString()}`,
+  getSearchParams() {
+    return searchParams;
+  },
+};
 ---
 
-<simple-partial data-url={pagePath} data-props={devalueStringify(props)}>
-  <Component {...props} />
+<simple-partial>
+  <Component />
 </simple-partial>
 
 <script>
@@ -61,15 +94,8 @@ const pagePath = componentFileUrl.href
     constructor() {
       super();
     }
-    private url: string | undefined;
-    private stringifiedProps: string | undefined;
 
     connectedCallback() {
-      this.url = this.getAttribute("data-url") ?? undefined;
-      if (!this.url) {
-        throw missingUrlError;
-      }
-      this.stringifiedProps = this.getAttribute("data-props") ?? undefined;
       this.initForms();
     }
 
@@ -84,19 +110,20 @@ const pagePath = componentFileUrl.href
 
     private submitCallback(event: SubmitEvent) {
       event.preventDefault();
-      if (!this.url) {
+      const form = event.target as HTMLFormElement;
+      const actionParams = new URLSearchParams(form.action.split("?")[1]);
+      const partialUrl = actionParams.get("_partial");
+      if (!partialUrl) {
         throw missingUrlError;
       }
-      const formData = new FormData(event.target as HTMLFormElement);
-      if (this.stringifiedProps) {
-        formData.set("__partialProps", this.stringifiedProps);
-      }
-      fetch(this.url, {
+
+      const formData = new FormData(form);
+      fetch(partialUrl, {
         method: "POST",
         body: formData,
       }).then(async (response) => {
         if (!response.ok) {
-          return navigate(window.location.pathname, { formData });
+          return navigate(form.action, { formData });
         }
         const htmlString = await response.text();
         const incomingContents = new DOMParser().parseFromString(

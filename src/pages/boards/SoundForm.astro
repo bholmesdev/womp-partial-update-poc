@@ -3,14 +3,15 @@ export const partial = true;
 
 import { z } from "astro/zod";
 import { Card, CardHeader, CardContent } from "../../components/card";
-import { resolveProps } from "@/utils";
 
 type Props = {
   id: string;
   name: string;
 };
 
-const { id, name: initialName } = await resolveProps(Astro);
+const { action, getSearchParams } = Astro.locals.partial;
+const { id, name: initialName } = await getSearchParams<Props>();
+
 const formData = await Astro.locals.getFormData(id);
 
 let fieldErrors: { id?: string[]; name?: string[] } = {};
@@ -40,6 +41,7 @@ async function handlePost() {
   <form
     class="relative"
     x-data="{loading: false}"
+    action={action}
     method="POST"
     @submit="loading = true"
   >
