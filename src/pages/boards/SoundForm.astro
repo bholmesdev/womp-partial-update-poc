@@ -3,6 +3,7 @@ export const partial = true;
 
 import { z } from "astro/zod";
 import { Card, CardHeader, CardContent } from "../../components/card";
+import FormName from "@/components/FormName.astro";
 
 type Props = {
   id: string;
@@ -12,7 +13,9 @@ type Props = {
 const { formAction, getSearchParams, redirect } = Astro.locals.partial;
 const { id, name } = await getSearchParams<Props>();
 
-const idForm = await Astro.locals.form.getData(id, {
+const formName = `sound-${id}`;
+
+const idForm = await Astro.locals.form.getDataByName(formName, {
   name: z.string().min(2),
 });
 
@@ -29,6 +32,7 @@ if (idForm?.success) {
     method="POST"
     @submit="loading = true"
   >
+    <FormName value={formName} />
     <CardHeader>
       <p
         x-cloak
@@ -50,7 +54,6 @@ if (idForm?.success) {
           ></path>
         </svg>
       </p>
-      <input type="hidden" name="type" value={id} />
       <input
         style={{ viewTransitionName: `input-${id}` }}
         type="text"
