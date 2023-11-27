@@ -10,7 +10,7 @@ type Props = {
   name: string;
 };
 
-const { formAction, getSearchParams, redirect } = Astro.locals.partial;
+const { formAction, getSearchParams } = Astro.locals.partial;
 const { id, name } = await getSearchParams<Props>();
 
 const formName = `sound-${id}`;
@@ -20,7 +20,8 @@ const idForm = await Astro.locals.form.getDataByName(formName, {
 });
 
 if (idForm?.success) {
-  return redirect(`/sounds/${id}`);
+  // fake db timeout
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 }
 ---
 
@@ -32,6 +33,13 @@ if (idForm?.success) {
     method="POST"
     @submit="loading = true"
   >
+    {
+      idForm?.success && (
+        <p class="bg-green-200 text-green-950 rounded px-2 py-1 text-sm">
+          Success!
+        </p>
+      )
+    }
     <FormName value={formName} />
     <CardHeader>
       <p
