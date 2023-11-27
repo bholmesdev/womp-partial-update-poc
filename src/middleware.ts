@@ -40,21 +40,22 @@ function validate<T extends ZodRawShape>(formData: FormData, validator: T) {
 
 export const onRequest = defineMiddleware(({ request, locals }, next) => {
   locals.form = {
-    async getData<T extends ZodRawShape>(
-      type: string | undefined,
-      validator: T
-    ) {
+    async getData<T extends ZodRawShape>(validator: T) {
       if (!isFormRequest(request)) return undefined;
 
       // TODO: hoist exceptions as `formErrors`
       const formData = await request.clone().formData();
 
-      if (!type) {
-        return validate<T>(formData, validator);
-      }
+      return validate<T>(formData, validator);
+    },
+    async getDataByName<T extends ZodRawShape>(name: string, validator: T) {
+      if (!isFormRequest(request)) return undefined;
 
-      if (formData.get("type") === type) {
-        formData.delete("type");
+      // TODO: hoist exceptions as `formErrors`
+      const formData = await request.clone().formData();
+
+      if (formData.get("_formName") === name) {
+        formData.delete("_formName");
         return validate<T>(formData, validator);
       }
 
