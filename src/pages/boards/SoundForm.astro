@@ -10,33 +10,14 @@ type Props = {
 };
 
 const { action, getSearchParams, redirect } = Astro.locals.partial;
-const { id, name: initialName } = await getSearchParams<Props>();
+const { id, name } = await getSearchParams<Props>();
 
-const formData = await Astro.locals.getFormData(id);
+const idForm = await Astro.locals.form.getData(id, {
+  name: z.string().min(2),
+});
 
-let fieldErrors: { id?: string[]; name?: string[] } = {};
-let name = initialName;
-
-const { success } = await handlePost();
-if (success) {
+if (idForm?.success) {
   return redirect(`/sounds/${id}`);
-}
-
-async function handlePost() {
-  if (!formData) return { success: false };
-
-  const obj = Object.fromEntries(formData.entries());
-  const parsed = z.object({ name: z.string().min(2) }).safeParse(obj);
-
-  if (!parsed.success) {
-    fieldErrors = parsed.error.formErrors.fieldErrors;
-    return { success: false };
-  } else {
-    // fake db delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    name = parsed.data.name;
-    return { success: true };
-  }
 }
 ---
 
@@ -77,17 +58,16 @@ async function handlePost() {
         class="bg-background"
         value={name}
       />
-      {
-        fieldErrors.name && (
-          <ul>
-            {fieldErrors.name.map((error) => (
+      <ul>
+        {
+          !idForm?.success &&
+            idForm?.error.formErrors.fieldErrors.name?.map((error) => (
               <li class="bg-red-200 text-red-950 px-2 py-1 text-sm rounded">
                 {error}
               </li>
-            ))}
-          </ul>
-        )
-      }
+            ))
+        }
+      </ul>
       <CardContent>
         <p>0 sounds</p>
       </CardContent>

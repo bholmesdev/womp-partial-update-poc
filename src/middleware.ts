@@ -1,4 +1,5 @@
 import type { ValidRedirectStatus } from "astro";
+import { z, type ZodRawShape, type ZodType } from "astro/zod";
 import { defineMiddleware } from "astro:middleware";
 
 const formContentTypes = [
@@ -25,14 +26,40 @@ export type PartialRedirectPayload = {
   location: string;
 };
 
-export const onRequest = defineMiddleware(({ request, locals }, next) => {
-  locals.getFormData = async (type?: string) => {
-    if (!isFormRequest(request)) return;
-    const formData = request.clone().formData();
-    if (!type) return formData;
+function validate<T extends ZodRawShape>(formData: FormData, validator: T) {
+  const result = z
+    .preprocess((formData) => {
+      if (!(formData instanceof FormData)) return formData;
+      // TODO: map multiple form values of the same name
+      return Object.fromEntries(formData.entries());
+    }, z.object(validator))
+    .safeParse(formData);
 
-    const data = await formData;
-    if (data.get("type") === type) return data;
+  return result;
+}
+
+export const onRequest = defineMiddleware(({ request, locals }, next) => {
+  locals.form = {
+    async getData<T extends ZodRawShape>(
+      type: string | undefined,
+      validator: T
+    ) {
+      if (!isFormRequest(request)) return undefined;
+
+      // TODO: hoist exceptions as `formErrors`
+      const formData = await request.clone().formData();
+
+      if (!type) {
+        return validate<T>(formData, validator);
+      }
+
+      if (formData.get("type") === type) {
+        formData.delete("type");
+        return validate<T>(formData, validator);
+      }
+
+      return undefined;
+    },
   };
 
   locals.partial = {
