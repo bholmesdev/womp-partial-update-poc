@@ -18,7 +18,7 @@ declare namespace App {
       getSearchParams<
         T extends Record<string, string | boolean | number | undefined>
       >(): Promise<T>;
-      action: string;
+      formAction: string;
       redirect: (
         path: string,
         status?: ValidRedirectStatus | undefined

@@ -67,7 +67,7 @@ const actionParams = new URLSearchParams({
   _partial: partialUrl,
 });
 
-Astro.locals.partial.action = `?${actionParams.toString()}`;
+Astro.locals.partial.formAction = `?${actionParams.toString()}`;
 Astro.locals.partial.getSearchParams = () => searchParams;
 ---
 

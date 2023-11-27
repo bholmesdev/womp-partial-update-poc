@@ -63,7 +63,7 @@ export const onRequest = defineMiddleware(({ request, locals }, next) => {
   };
 
   locals.partial = {
-    action: `?_partial=${new URL(request.url).pathname}`,
+    formAction: `?_partial=${new URL(request.url).pathname}`,
     redirect: (path: string, status?: ValidRedirectStatus) => {
       // Return redirect payload as JSON to be handled by client
       const payload: PartialRedirectPayload = {
